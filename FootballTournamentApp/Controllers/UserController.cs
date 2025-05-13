@@ -45,13 +45,6 @@ public class UserController : ControllerBase
         return Ok(userRegisterModel);
     }
 
-    [HttpPost("login")]
-    public async Task<ActionResult> Login(UserLoginModel userLoginModel)
-    {
-        var result = await _userService.Login(userLoginModel);
-        return Ok(result);
-    }
-
     [HttpPut]
     public async Task<ActionResult> UpdateUser(int id, UpdateUserModel updatedUser)
     {

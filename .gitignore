@@ -10,6 +10,10 @@
 *.userosscache
 *.sln.docstates
 
+# Remove ІDE Rider Settings
+.idea/
+*.DotSettings.user
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

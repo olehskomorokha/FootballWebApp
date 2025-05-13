@@ -1,6 +1,5 @@
 #region
 
-using Business.Helpers;
 using Business.Models;
 using Business.Services;
 using Data.Data;
@@ -19,7 +18,7 @@ public class UserControllerTests
 {
     private StoreDbContext _context;
     private UserController _userController;
-    private PasswordHasher _passwordHasher;
+    private IConfiguration _configuration;
 
     [SetUp]
     public void Setup()
@@ -33,7 +32,7 @@ public class UserControllerTests
         _context = new StoreDbContext(options);
 
         // Initialize PasswordHasher
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new[]
+        _configuration = new ConfigurationBuilder().AddInMemoryCollection(new[]
             {
                 new KeyValuePair<string, string>("Jwt:Key", "12342131231241234123121132123123123"),
                 new KeyValuePair<string, string>("Jwt:Issuer", "TestIssuer"),
@@ -41,7 +40,6 @@ public class UserControllerTests
             })
             .Build();
 
-        _passwordHasher = new PasswordHasher(configuration);
 
         _context.Users.AddRange(
             new User
@@ -50,7 +48,7 @@ public class UserControllerTests
                 Nickname = "player_one",
                 DateOfRegistration = new DateTime(2023, 1, 10),
                 Email = "player1@example.com",
-                Password = _passwordHasher.HashPassword("Password123!")
+                Password = "Password123!"
             },
             new User
             {
@@ -58,12 +56,11 @@ public class UserControllerTests
                 Nickname = "pro_gamer",
                 DateOfRegistration = new DateTime(2023, 3, 5),
                 Email = "gamer2@example.com",
-                Password = _passwordHasher.HashPassword("SecurePass456!")
+                Password = "SecurePass456!"
             }
         );
         _context.SaveChanges();
-
-        var userService = new UserService(_context, _passwordHasher);
+        var userService = new UserService(_context, _configuration);
         _userController = new UserController(userService);
     }
 
@@ -115,21 +112,7 @@ public class UserControllerTests
         Assert.That(createdUser, Is.Not.Null);
         Assert.That(createdUser.Nickname, Is.EqualTo(newUser.NickName));
     }
-
-    [Test]
-    public async Task Login_ShouldReturnToken()
-    {
-        var userLogin = new UserLoginModel
-        {
-            Email = "player1@example.com",
-            Password = "Password123!"
-        };
-
-        var resultToken = await _userController.Login(userLogin);
-
-        Assert.That(resultToken, Is.Not.Null.Or.Empty);
-    }
-
+   
     [Test]
     public async Task UpdateUser_ShouldModifyUserFields()
     {

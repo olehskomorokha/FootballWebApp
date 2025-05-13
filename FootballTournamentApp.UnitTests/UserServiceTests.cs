@@ -1,6 +1,5 @@
 #region
 
-using Business.Helpers;
 using Business.Models;
 using Business.Services;
 using Data.Data;
@@ -19,7 +18,6 @@ public class UserServiceTests
     private UserService _userService;
     private StoreDbContext _context;
     private Mock<IConfiguration> _configuration;
-    private Mock<PasswordHasher> _mockPasswordHasher;
 
     [SetUp]
     public void Setup()
@@ -28,8 +26,7 @@ public class UserServiceTests
         _configuration.Setup(c => c["Jwt:Key"]).Returns("12342131231241234123121132123123123");
         _configuration.Setup(c => c["Jwt:Issuer"]).Returns("TestIssuer");
         _configuration.Setup(c => c["Jwt:Audience"]).Returns("TestAudience");
-
-        _mockPasswordHasher = new Mock<PasswordHasher>(_configuration.Object);
+        
         var options = new DbContextOptionsBuilder<StoreDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString(), b => b.EnableNullChecks(false))
             .EnableSensitiveDataLogging()
@@ -44,7 +41,7 @@ public class UserServiceTests
                 Nickname = "player_one",
                 DateOfRegistration = new DateTime(2023, 1, 10),
                 Email = "player1@example.com",
-                Password = _mockPasswordHasher.Object.HashPassword("Password123!")
+                Password = "Password123!"
             },
             new User
             {
@@ -63,7 +60,7 @@ public class UserServiceTests
                 Password = "Rookie789@"
             });
         _context.SaveChanges();
-        _userService = new UserService(_context, _mockPasswordHasher.Object);
+        _userService = new UserService(_context, _configuration.Object);
     }
 
     [TearDown]
@@ -137,66 +134,6 @@ public class UserServiceTests
 
         var ex = Assert.ThrowsAsync<ArgumentException>(async () => await _userService.Register(newUser));
         Assert.That(ex.Message, Is.EqualTo("Not all data fields are filled"));
-    }
-
-    [Test]
-    public async Task Login_ShouldReturnTokenForValidUser()
-    {
-        var loginModel = new UserLoginModel
-        {
-            Email = "player1@example.com",
-            Password = "Password123!"
-        };
-
-        var token = await _userService.Login(loginModel);
-
-        Assert.That(token, Is.Not.Null.Or.Empty);
-    }
-
-    [Test]
-    public void Login_ShouldThrowArgumentNullException_WhenUserLoginModelIsNull()
-    {
-        UserLoginModel loginModel = null;
-
-        var ex = Assert.ThrowsAsync<ArgumentNullException>(async () => await _userService.Login(loginModel));
-        Assert.That(ex.Message, Does.Contain("userLogin model is null"));
-        Assert.That(ex.ParamName, Is.EqualTo("userLogin"));
-    }
-
-    [Test]
-    public void Login_ShouldThrowApplicationException_WhenUserLoginModelIsNull()
-    {
-        UserLoginModel loginModel = null;
-
-        var ex = Assert.ThrowsAsync<ArgumentNullException>(async () => await _userService.Login(loginModel));
-        Assert.That(ex.Message, Does.Contain("userLogin model is null"));
-        Assert.That(ex.ParamName, Is.EqualTo("userLogin"));
-    }
-
-    [Test]
-    public void Login_ShouldThrowApplicationException_WhenUserEmailIsWrong()
-    {
-        UserLoginModel loginModel = new UserLoginModel
-        {
-            Email = "dadada",
-            Password = "Password123!"
-        };
-
-        var ex = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.Login(loginModel));
-        Assert.That(ex.Message, Does.Contain("Wrong email"));
-    }
-
-    [Test]
-    public void Login_ShouldThrowApplicationException_WhenPasswordDoesntMatchW()
-    {
-        UserLoginModel loginModel = new UserLoginModel
-        {
-            Email = "player1@example.com",
-            Password = "dadadad1231"
-        };
-
-        var ex = Assert.ThrowsAsync<ApplicationException>(async () => await _userService.Login(loginModel));
-        Assert.That(ex.Message, Is.EqualTo("Wrong password"));
     }
 
     [Test]

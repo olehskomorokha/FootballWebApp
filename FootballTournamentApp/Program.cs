@@ -1,6 +1,5 @@
 #region
 
-using Business.Helpers;
 using Business.Interfaces;
 using Business.Services;
 using Data.Data;
@@ -18,7 +17,6 @@ builder.Services.AddDbContext<StoreDbContext>(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<PasswordHasher>();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 builder.Services.AddControllers();

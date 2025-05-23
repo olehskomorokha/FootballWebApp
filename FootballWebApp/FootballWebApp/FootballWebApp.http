@@ -1,0 +1,6 @@
+@FootballWebApp_HostAddress = http://localhost:5049
+
+GET {{FootballWebApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

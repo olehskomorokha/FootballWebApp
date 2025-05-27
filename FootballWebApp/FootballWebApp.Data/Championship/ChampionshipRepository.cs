@@ -37,10 +37,16 @@ public class ChampionshipRepository : IChampionshipRepository
     
     public async Task<ChampionshipDto> UpdateAsync(Guid id, ChampionshipDto updatedChampionship)
     {
-        var championship = _cosmosDbcontext.Championships.FirstOrDefaultAsync(c => c.Id == id);
+        var championship = await _cosmosDbcontext.Championships.FirstOrDefaultAsync(c => c.Id == id);
+        if (championship == null)
+        {
+            throw new ChampionshipNotFoundException();
+        }
+
         _mapper.Map(updatedChampionship, championship);
-        
+        _cosmosDbcontext.Championships.Update(championship);
         await _cosmosDbcontext.SaveChangesAsync();
+        
         return _mapper.Map<ChampionshipDto>(championship);
     }
     

@@ -14,10 +14,12 @@ public class CosmosDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultContainer("championships");
-        modelBuilder.Entity<ChampionshipDao>()
 
-            .HasKey(c => c.Id);
         modelBuilder.Entity<ChampionshipDao>()
-            .HasPartitionKey(c => c.Id);
+            .HasKey(s => s.Id);
+        modelBuilder.Entity<ChampionshipDao>()
+            .HasPartitionKey(s => s.Id);
+
+
     }
 }

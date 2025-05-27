@@ -139,6 +139,7 @@ public class UserOrchestratorTests
             .ReturnsAsync(_testUsers);
         _mockUserRepository.Setup(repo => repo.UpdateUserAsync(1, It.IsAny<UserDto>()))
             .ReturnsAsync(updatedData);
+
         var result = await _userOrchestrator.UpdateUserAsync(1, updatedData);
 
         Assert.That(result.Email, Is.EqualTo(updatedData.Email));
@@ -157,8 +158,29 @@ public class UserOrchestratorTests
         _mockUserRepository.Setup(repo => repo.GetUserByIdAsync(99))
             .ReturnsAsync((UserDto?)null);
 
-        Assert.ThrowsAsync<UserNotFoundException>(async () => await _userOrchestrator.UpdateUserAsync(99, updatedData));
+        Assert.ThrowsAsync<UserNotFoundException>(async () => 
+            await _userOrchestrator.UpdateUserAsync(99, updatedData));
         _mockUserRepository.Verify(repo => repo.UpdateUserAsync(It.IsAny<int>(), It.IsAny<UserDto>()), Times.Never);
+    }
+
+    [Test]
+    public void UpdateUser_WithDuplicateEmail_ThrowsException()
+    {
+        var existingUser = _testUsers[0];
+        var updatedData = new UserDto
+        {
+            Id = 1,
+            Nickname = "NewNickname",
+            Email = "gamer2@example.com"
+        };
+
+        _mockUserRepository.Setup(repo => repo.GetUserByIdAsync(1))
+            .ReturnsAsync(existingUser);
+        _mockUserRepository.Setup(repo => repo.GetAllUsersAsync())
+            .ReturnsAsync(_testUsers);
+
+        Assert.ThrowsAsync<UserAlreadyExistsException>(async () => 
+            await _userOrchestrator.UpdateUserAsync(1, updatedData));
     }
 
     [Test]

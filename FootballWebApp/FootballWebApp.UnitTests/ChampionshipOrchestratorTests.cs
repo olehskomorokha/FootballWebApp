@@ -53,18 +53,15 @@ public class ChampionshipOrchestratorTests
     [Test]
     public async Task GetAllAsync_ShouldReturnAllChampionships()
     {
-        // Arrange
         _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
             .ReturnsAsync(_testChampionships);
 
-        // Act
         var result = await _championshipOrchestrator.GetAllAsync(new PaginationDto
         {
             page = 1,
             pageSize = 10
         });
 
-        // Assert
         Assert.That(result.Count, Is.EqualTo(3));
         _mockChampionshipRepository.Verify(repo => repo.GetAllAsync(), Times.Once);
     }
@@ -72,15 +69,12 @@ public class ChampionshipOrchestratorTests
     [Test]
     public async Task GetByIdAsync_ShouldReturnCorrectChampionship()
     {
-        // Arrange
         var expectedChampionship = _testChampionships[0];
         _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(expectedChampionship.Id))
             .ReturnsAsync(expectedChampionship);
 
-        // Act
         var result = await _championshipOrchestrator.GetByIdAsync(expectedChampionship.Id);
 
-        // Assert
         Assert.That(result.Name, Is.EqualTo("Premier League"));
         _mockChampionshipRepository.Verify(repo => repo.GetByIdAsync(expectedChampionship.Id), Times.Once);
     }
@@ -88,12 +82,10 @@ public class ChampionshipOrchestratorTests
     [Test]
     public void GetByIdAsync_ShouldThrowExceptionIfChampionshipNotFound()
     {
-        // Arrange
         var nonExistentId = Guid.NewGuid();
         _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(nonExistentId))
             .ReturnsAsync((ChampionshipDto?)null);
 
-        // Act & Assert
         Assert.ThrowsAsync<ChampionshipNotFoundException>(async () => 
             await _championshipOrchestrator.GetByIdAsync(nonExistentId));
         _mockChampionshipRepository.Verify(repo => repo.GetByIdAsync(nonExistentId), Times.Once);
@@ -102,7 +94,6 @@ public class ChampionshipOrchestratorTests
     [Test]
     public async Task CreateAsync_ShouldAddNewChampionship()
     {
-        // Arrange
         var newChampionship = new ChampionshipDto
         {
             Name = "Serie A",
@@ -116,17 +107,14 @@ public class ChampionshipOrchestratorTests
         _mockChampionshipRepository.Setup(repo => repo.CreateAsync(It.IsAny<ChampionshipDto>()))
             .ReturnsAsync((ChampionshipDto c) => c);
 
-        // Act
         await _championshipOrchestrator.CreateAsync(newChampionship);
 
-        // Assert
         _mockChampionshipRepository.Verify(repo => repo.CreateAsync(It.IsAny<ChampionshipDto>()), Times.Once);
     }
 
     [Test]
     public void CreateAsync_ShouldNotAddExistingChampionship_ThrowException()
     {
-        // Arrange
         var newChampionship = new ChampionshipDto
         {
             Name = "Premier League",
@@ -138,181 +126,140 @@ public class ChampionshipOrchestratorTests
         _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
             .ReturnsAsync(_testChampionships);
 
-        // Act & Assert
         Assert.ThrowsAsync<ChampionshipAlreadyExistsException>(async () => 
             await _championshipOrchestrator.CreateAsync(newChampionship));
         _mockChampionshipRepository.Verify(repo => repo.CreateAsync(It.IsAny<ChampionshipDto>()), Times.Never);
     }
 
-    // [Test]
-    // public async Task UpdateChampionship_ShouldUpdateSuccessfully()
-    // {
-    //     // Arrange
-    //     var existingChampionship = _testChampionships[0];
-    //     var updatedData = new ChampionshipDto
-    //     {
-    //         Id = existingChampionship.Id,
-    //         Name = "Updated Premier League",
-    //         TeamAPoints = 15,
-    //         TeamBPoints = 12,
-    //         TeamCPoints = 9
-    //     };
-    //
-    //     _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
-    //         .ReturnsAsync(existingChampionship);
-    //     _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
-    //         .ReturnsAsync(_testChampionships);
-    //
-    //     var result = await _championshipOrchestrator.UpdateAsync(updatedData);
-    //
-    //     // Assert
-    //     Assert.That(result.Name, Is.EqualTo(updatedData.Name));
-    //     _mockChampionshipRepository.Verify(repo => repo.UpdateAsync(It.IsAny<ChampionshipDto>()), Times.Once);
-    // }
-    //
-    // [Test]
-    // public void UpdateChampionship_ChampionshipDoesNotExist_ThrowsException()
-    // {
-    //     // Arrange
-    //     var updatedData = new ChampionshipDto
-    //     {
-    //         Id = Guid.NewGuid(),
-    //         Name = "Non-existent Championship",
-    //         TeamAPoints = 15,
-    //         TeamBPoints = 12,
-    //         TeamCPoints = 9
-    //     };
-    //
-    //     _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(updatedData.Id))
-    //         .ReturnsAsync((ChampionshipDto?)null);
-    //
-    //     // Act & Assert
-    //     Assert.ThrowsAsync<ChampionshipNotFoundException>(async () => 
-    //         await _championshipOrchestrator.UpdateAsync(updatedData));
-    //     _mockChampionshipRepository.Verify(repo => repo.UpdateAsync(It.IsAny<ChampionshipDto>()), Times.Never);
-    // }
-    //
-    // [Test]
-    // public async Task UpdateChampionship_WithNegativePoints_ThrowsArgumentException()
-    // {
-    //     // Arrange
-    //     var existingChampionship = _testChampionships[0];
-    //     var updatedData = new ChampionshipDto
-    //     {
-    //         Id = existingChampionship.Id,
-    //         Name = "Updated Premier League",
-    //         TeamAPoints = -5,  // Negative points
-    //         TeamBPoints = 12,
-    //         TeamCPoints = 9
-    //     };
-    //
-    //     _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
-    //         .ReturnsAsync(existingChampionship);
-    //
-    //     // Act & Assert
-    //     var ex = Assert.ThrowsAsync<ArgumentException>(async () => 
-    //         await _championshipOrchestrator.UpdateAsync(updatedData));
-    //     Assert.That(ex.Message, Does.Contain("Points cannot be negative"));
-    // }
-    //
-    // [Test]
-    // public async Task UpdateChampionship_WithDuplicateName_ThrowsException()
-    // {
-    //     // Arrange
-    //     var existingChampionship = _testChampionships[0];
-    //     var updatedData = new ChampionshipDto
-    //     {
-    //         Id = existingChampionship.Id,
-    //         Name = "La Liga", // Name of another existing championship
-    //         TeamAPoints = 15,
-    //         TeamBPoints = 12,
-    //         TeamCPoints = 9
-    //     };
-    //
-    //     _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
-    //         .ReturnsAsync(existingChampionship);
-    //     _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
-    //         .ReturnsAsync(_testChampionships);
-    //
-    //     // Act & Assert
-    //     Assert.ThrowsAsync<ChampionshipAlreadyExistsException>(async () => 
-    //         await _championshipOrchestrator.UpdateAsync(updatedData));
-    // }
-    //
-    // [Test]
-    // public async Task UpdateChampionship_WithSameData_ShouldNotCallUpdate()
-    // {
-    //     // Arrange
-    //     var existingChampionship = _testChampionships[0];
-    //     var updatedData = new ChampionshipDto
-    //     {
-    //         Id = existingChampionship.Id,
-    //         Name = existingChampionship.Name,
-    //         TeamAPoints = existingChampionship.TeamAPoints,
-    //         TeamBPoints = existingChampionship.TeamBPoints,
-    //         TeamCPoints = existingChampionship.TeamCPoints,
-    //         DateOfCreation = existingChampionship.DateOfCreation
-    //     };
-    //
-    //     _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
-    //         .ReturnsAsync(existingChampionship);
-    //
-    //     // Act
-    //     await _championshipOrchestrator.UpdateAsync(updatedData);
-    //
-    //     // Assert
-    //     _mockChampionshipRepository.Verify(repo => repo.UpdateAsync(It.IsAny<ChampionshipDto>()), Times.Never);
-    // }
-    //
-    // [Test]
-    // public async Task UpdateChampionship_PartialUpdate_ShouldOnlyUpdateProvidedFields()
-    // {
-    //     // Arrange
-    //     var existingChampionship = _testChampionships[0];
-    //     var partialUpdate = new ChampionshipDto
-    //     {
-    //         Id = existingChampionship.Id,
-    //         Name = "Updated Name",
-    //         TeamAPoints = existingChampionship.TeamAPoints,  // Keep existing points
-    //         TeamBPoints = existingChampionship.TeamBPoints,
-    //         TeamCPoints = existingChampionship.TeamCPoints,
-    //         DateOfCreation = existingChampionship.DateOfCreation
-    //     };
-    //
-    //     _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
-    //         .ReturnsAsync(existingChampionship);
-    //     _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
-    //         .ReturnsAsync(_testChampionships);
-    //     _mockChampionshipRepository.Setup(repo => repo.UpdateAsync(It.IsAny<ChampionshipDto>()))
-    //         .ReturnsAsync(partialUpdate);
-    //
-    //     // Act
-    //     var result = await _championshipOrchestrator.UpdateAsync(partialUpdate);
-    //
-    //     // Assert
-    //     Assert.Multiple(() =>
-    //     {
-    //         Assert.That(result.Name, Is.EqualTo("Updated Name"));
-    //         Assert.That(result.TeamAPoints, Is.EqualTo(existingChampionship.TeamAPoints));
-    //         Assert.That(result.TeamBPoints, Is.EqualTo(existingChampionship.TeamBPoints));
-    //         Assert.That(result.TeamCPoints, Is.EqualTo(existingChampionship.TeamCPoints));
-    //     });
-    // }
+    [Test]
+    public async Task UpdateChampionship_ShouldUpdateSuccessfully()
+    {
+        var existingChampionship = _testChampionships[0];
+        var updatedData = new ChampionshipDto
+        {
+            Id = existingChampionship.Id,
+            Name = "Updated Premier League",
+            TeamAPoints = 15,
+            TeamBPoints = 12,
+            TeamCPoints = 9
+        };
+
+        _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
+            .ReturnsAsync(existingChampionship);
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+            .ReturnsAsync(_testChampionships);
+        _mockChampionshipRepository.Setup(repo => repo.UpdateAsync(existingChampionship.Id, It.IsAny<ChampionshipDto>()))
+            .ReturnsAsync(updatedData);
+
+        var result = await _championshipOrchestrator.UpdateAsync(existingChampionship.Id, updatedData);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Name, Is.EqualTo(updatedData.Name));
+            Assert.That(result.TeamAPoints, Is.EqualTo(updatedData.TeamAPoints));
+            Assert.That(result.TeamBPoints, Is.EqualTo(updatedData.TeamBPoints));
+            Assert.That(result.TeamCPoints, Is.EqualTo(updatedData.TeamCPoints));
+        });
+        _mockChampionshipRepository.Verify(repo => repo.UpdateAsync(existingChampionship.Id, It.IsAny<ChampionshipDto>()), Times.Once);
+    }
+
+    [Test]
+    public void UpdateChampionship_ChampionshipDoesNotExist_ThrowsException()
+    {
+        var nonExistentId = Guid.NewGuid();
+        var updatedData = new ChampionshipDto
+        {
+            Id = nonExistentId,
+            Name = "Non-existent Championship",
+            TeamAPoints = 15,
+            TeamBPoints = 12,
+            TeamCPoints = 9
+        };
+
+        _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(nonExistentId))
+            .ReturnsAsync((ChampionshipDto?)null);
+
+        Assert.ThrowsAsync<ChampionshipNotFoundException>(async () => 
+            await _championshipOrchestrator.UpdateAsync(nonExistentId, updatedData));
+        _mockChampionshipRepository.Verify(repo => repo.UpdateAsync(It.IsAny<Guid>(), It.IsAny<ChampionshipDto>()), Times.Never);
+    }
+
+    [Test]
+    public async Task UpdateChampionship_WithSameName_ShouldSucceed()
+    {
+        var existingChampionship = _testChampionships[0];
+        var updatedData = new ChampionshipDto
+        {
+            Id = existingChampionship.Id,
+            Name = existingChampionship.Name,
+            TeamAPoints = 20,
+            TeamBPoints = 15,
+            TeamCPoints = 10
+        };
+
+        _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
+            .ReturnsAsync(existingChampionship);
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+            .ReturnsAsync(_testChampionships);
+        _mockChampionshipRepository.Setup(repo => repo.UpdateAsync(existingChampionship.Id, It.IsAny<ChampionshipDto>()))
+            .ReturnsAsync(updatedData);
+
+        var result = await _championshipOrchestrator.UpdateAsync(existingChampionship.Id, updatedData);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Name, Is.EqualTo(existingChampionship.Name));
+            Assert.That(result.TeamAPoints, Is.EqualTo(20));
+            Assert.That(result.TeamBPoints, Is.EqualTo(15));
+            Assert.That(result.TeamCPoints, Is.EqualTo(10));
+        });
+        _mockChampionshipRepository.Verify(repo => repo.UpdateAsync(existingChampionship.Id, It.IsAny<ChampionshipDto>()), Times.Once);
+    }
+
+    [Test]
+    public async Task UpdateChampionship_PartialUpdate_ShouldOnlyUpdateProvidedFields()
+    {
+        var existingChampionship = _testChampionships[0];
+        var updatedData = new ChampionshipDto
+        {
+            Id = existingChampionship.Id,
+            Name = "Updated Name",
+            TeamAPoints = existingChampionship.TeamAPoints,
+            TeamBPoints = existingChampionship.TeamBPoints,
+            TeamCPoints = existingChampionship.TeamCPoints,
+            DateOfCreation = existingChampionship.DateOfCreation
+        };
+
+        _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
+            .ReturnsAsync(existingChampionship);
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+            .ReturnsAsync(_testChampionships);
+        _mockChampionshipRepository.Setup(repo => repo.UpdateAsync(existingChampionship.Id, It.IsAny<ChampionshipDto>()))
+            .ReturnsAsync(updatedData);
+
+        var result = await _championshipOrchestrator.UpdateAsync(existingChampionship.Id, updatedData);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Name, Is.EqualTo("Updated Name"));
+            Assert.That(result.TeamAPoints, Is.EqualTo(existingChampionship.TeamAPoints));
+            Assert.That(result.TeamBPoints, Is.EqualTo(existingChampionship.TeamBPoints));
+            Assert.That(result.TeamCPoints, Is.EqualTo(existingChampionship.TeamCPoints));
+            Assert.That(result.DateOfCreation, Is.EqualTo(existingChampionship.DateOfCreation));
+        });
+    }
 
     [Test]
     public async Task DeleteChampionship_ShouldRemoveChampionship()
     {
-        // Arrange
         var existingChampionship = _testChampionships[0];
         _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
             .ReturnsAsync(existingChampionship);
         _mockChampionshipRepository.Setup(repo => repo.DeleteAsync(existingChampionship.Id))
             .ReturnsAsync(existingChampionship.Id);
 
-        // Act
         await _championshipOrchestrator.DeleteAsync(existingChampionship.Id);
 
-        // Assert
         _mockChampionshipRepository.Verify(repo => repo.DeleteAsync(existingChampionship.Id), Times.Once);
     }
 } 

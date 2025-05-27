@@ -56,8 +56,6 @@ public class UserControllerTests
             });
         
         context.SaveChanges();
-
-       
     }
     [Test]
     public async Task Get_ShouldReturnAllUsers()

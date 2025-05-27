@@ -43,24 +43,13 @@ public class ChampionshipOrchestrator : IChampionshipOrchestrator
     
     public async Task<ChampionshipDto> UpdateAsync(Guid id, ChampionshipDto updatedChampionship)
     {
-        // 1. Перевіряємо, чи існує документ (кидає виняток, якщо його нема або Deleted = true)
-        var existingChampionship = await GetByIdAsync(id);
-
-        // 2. Перевірка на унікальність назви
+        await GetByIdAsync(id);
         var championships = await _repository.GetAllAsync();
+        var updated = await _repository.UpdateAsync(id, updatedChampionship);
         if (championships.Any(x => x.Name == updatedChampionship.Name && x.Id != id && !x.Deleted))
         {
             throw new ChampionshipAlreadyExistsException();
         }
-
-        // 3. Оновлюємо потрібні поля
-        existingChampionship.TeamAPoints = updatedChampionship.TeamAPoints;
-        existingChampionship.TeamBPoints = updatedChampionship.TeamBPoints;
-        existingChampionship.TeamCPoints = updatedChampionship.TeamCPoints;
-        // Можеш додати інші поля, які дозволяється змінювати
-
-        // 4. Оновлюємо в базі через ReplaceItemAsync (або UpdateAsync у репозиторії)
-        var updated = await _repository.UpdateAsync(id, existingChampionship);
 
         return updated;
     }

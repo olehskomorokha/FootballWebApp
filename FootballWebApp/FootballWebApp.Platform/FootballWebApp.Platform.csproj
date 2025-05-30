@@ -7,8 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\FootballWebApp.Model\FootballWebApp.Model.csproj" />
-      <ProjectReference Include="..\FootballWebApp.Platform\FootballWebApp.Platform.csproj" />
+      <PackageReference Include="Azure.Storage.Blobs" Version="12.24.0" />
     </ItemGroup>
 
 </Project>

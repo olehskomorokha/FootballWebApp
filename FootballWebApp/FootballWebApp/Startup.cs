@@ -4,8 +4,11 @@ using FootballWebApp.Data.Championship;
 using FootballWebApp.Data.User;
 using FootballWebApp.Model.Championship;
 using FootballWebApp.Model.User;
+using FootballWebApp.Model.UserChampionships;
 using FootballWebApp.Orchestrator.Championship;
+using FootballWebApp.Orchestrator.UserChampionship;
 using FootballWebApp.Orchestrators.User;
+using FootballWebApp.Platform.BlobStorage;
 using FootballWebApp.User.Contract;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -41,7 +44,7 @@ public class Startup
         services.AddScoped<IChampionshipOrchestrator, ChampionshipOrchestrator>();
         services.AddScoped<IUserOrchestrator, UserOrchestrator>();
         services.AddScoped<IUserRepository, UserRepository>();
-
+        services.AddScoped<IUserChampionshipOrchestrator, UserChampionshipOrchestrator>();
         services.AddAutoMapper(config => config.AddProfile(new UserMap()));
         services.AddAutoMapper(config => config.AddProfile(new PaginationMap()));
         services.AddAutoMapper(config => config.AddProfile(new ChampionshipMap()));
@@ -52,6 +55,11 @@ public class Startup
         });
         
         ConfigureDb(services);
+        var blobConfig = new BlobConfiguration();
+        _configuration.GetSection("AzureBlobConnectionString").Bind(blobConfig);
+        services.AddSingleton(blobConfig);
+
+        services.AddSingleton<IBlobStorage, BlobStorage>();
     }
 
     // Налаштування middleware

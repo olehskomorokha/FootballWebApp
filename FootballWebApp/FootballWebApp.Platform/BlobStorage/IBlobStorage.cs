@@ -6,4 +6,8 @@ public interface IBlobStorage
     Task CreateFileAsync(string fileName);
 
     Task<List<int>> GetAllFilesByNameAsync(Guid championshipId);
+
+    Task<Stream> GetFileByNameAsync(string fileName);
+    Task DeleteFileAsync(string fileName);
+    Task UpdateFileAsync(string fileName, Stream content);
 }

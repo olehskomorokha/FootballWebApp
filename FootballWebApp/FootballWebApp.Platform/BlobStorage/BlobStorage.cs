@@ -34,6 +34,48 @@ public class BlobStorage : IBlobStorage
             .AsPages(default, 10000)
             .SelectMany(dt => dt.Values).Select(fn => int.Parse(fn.Name.Split('_').Last())).ToList();
         return users;
+    }
 
+    public async Task<Stream> GetFileByNameAsync(string fileName)
+    {
+        var blobClient = _client
+            .GetBlobContainerClient(_configuration.ContainerName)
+            .GetBlobClient(fileName);
+
+        if (!await blobClient.ExistsAsync())
+        {
+            throw new FileNotFoundException($"File {fileName} not found in blob storage.");
+        }
+
+        var response = await blobClient.DownloadAsync();
+        return response.Value.Content;
+    }
+
+    public async Task DeleteFileAsync(string fileName)
+    {
+        var blobClient = _client
+            .GetBlobContainerClient(_configuration.ContainerName)
+            .GetBlobClient(fileName);
+
+        if (!await blobClient.ExistsAsync())
+        {
+            throw new FileNotFoundException($"File {fileName} not found in blob storage.");
+        }
+
+        await blobClient.DeleteAsync();
+    }
+
+    public async Task UpdateFileAsync(string fileName, Stream content)
+    {
+        var blobClient = _client
+            .GetBlobContainerClient(_configuration.ContainerName)
+            .GetBlobClient(fileName);
+
+        if (!await blobClient.ExistsAsync())
+        {
+            throw new FileNotFoundException($"File {fileName} not found in blob storage.");
+        }
+
+        await blobClient.UploadAsync(content, overwrite: true);
     }
 }

@@ -42,4 +42,30 @@ public class UserChampionshipOrchestrator : IUserChampionshipOrchestrator
         return await _userChampionshipStorage.GetAllFilesByNameAsync(championshipId);
     }
     
+    public async Task<Stream> GetUserChampionshipAsync(Guid championshipId, int userId)
+    {
+        var user = await _userOrchestrator.GetUserByIdAsync(userId);
+        var championship = await _championshipOrchestrator.GetByIdAsync(championshipId);
+        
+        var fileName = $"{championshipId:N}_{userId}";
+        return await _userChampionshipStorage.GetFileByNameAsync(fileName);
+    }
+
+    public async Task DeleteUserChampionshipAsync(Guid championshipId, int userId)
+    {
+        var user = await _userOrchestrator.GetUserByIdAsync(userId);
+        var championship = await _championshipOrchestrator.GetByIdAsync(championshipId);
+        
+        var fileName = $"{championshipId:N}_{userId}";
+        await _userChampionshipStorage.DeleteFileAsync(fileName);
+    }
+
+    public async Task UpdateUserChampionshipAsync(Guid championshipId, int userId, Stream content)
+    {
+        var user = await _userOrchestrator.GetUserByIdAsync(userId);
+        var championship = await _championshipOrchestrator.GetByIdAsync(championshipId);
+        
+        var fileName = $"{championshipId:N}_{userId}";
+        await _userChampionshipStorage.UpdateFileAsync(fileName, content);
+    }
 }

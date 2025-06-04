@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Azure.Cosmos;
 
 namespace FootballWebApp.Data.Championship;
@@ -7,8 +8,9 @@ namespace FootballWebApp.Data.Championship;
 public class ChampionshipDao
 {
     [Column("id"), Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    
     public Guid Id { get; set; }
+    [Required]
+    [MaxLength(50)]
     [Column("name")]
     public string Name { get; set; }
     [Column("dateOfCreation")]

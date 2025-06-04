@@ -13,7 +13,7 @@ public class ChampionshipOrchestrator : IChampionshipOrchestrator
     
     public async Task<ChampionshipDto> CreateAsync(ChampionshipDto championshipDto)
     {
-        var championships = await _repository.GetAllAsync();
+        var championships = await _repository.GetAllAsync(new PaginationDto { page = 1, pageSize = int.MaxValue });
         if (championships.Any(x => x.Name == championshipDto.Name && !x.Deleted))
         {
             throw new ChampionshipAlreadyExistsException();
@@ -24,11 +24,7 @@ public class ChampionshipOrchestrator : IChampionshipOrchestrator
     
     public async Task<List<ChampionshipDto>> GetAllAsync(PaginationDto pagination)
     {
-        var championships = await _repository.GetAllAsync();
-        return championships.Where(x => !x.Deleted)
-            .Skip((pagination.page - 1) * pagination.pageSize)
-            .Take(pagination.pageSize)
-            .ToList();
+        return await _repository.GetAllAsync(pagination);
     }
     
     public async Task<ChampionshipDto> GetByIdAsync(Guid id)
@@ -44,23 +40,14 @@ public class ChampionshipOrchestrator : IChampionshipOrchestrator
     public async Task<ChampionshipDto> UpdateAsync(Guid id, ChampionshipDto updatedChampionship)
     {
         await GetByIdAsync(id);
-        var championships = await _repository.GetAllAsync();
         var updated = await _repository.UpdateAsync(id, updatedChampionship);
-        if (championships.Any(x => x.Name == updatedChampionship.Name && x.Id != id && !x.Deleted))
-        {
-            throw new ChampionshipAlreadyExistsException();
-        }
-
+        
         return updated;
     }
     
     public async Task<Guid> DeleteAsync(Guid id)
     {
-        var championship = await _repository.GetByIdAsync(id);
-        if (championship == null)
-        {
-            throw new ChampionshipNotFoundException();
-        }
+        await GetByIdAsync(id);
         return await _repository.DeleteAsync(id);
     }
 }

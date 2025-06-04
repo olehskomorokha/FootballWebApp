@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FootballWebApp.Championship;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/v1/[controller]")]
 public class ChampionshipsController : ControllerBase
 {
     private readonly IChampionshipOrchestrator _championshipOrchestrator;

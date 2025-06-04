@@ -53,7 +53,7 @@ public class ChampionshipOrchestratorTests
     [Test]
     public async Task GetAllAsync_ShouldReturnAllChampionships()
     {
-        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync(null))
             .ReturnsAsync(_testChampionships);
 
         var result = await _championshipOrchestrator.GetAllAsync(new PaginationDto
@@ -63,7 +63,7 @@ public class ChampionshipOrchestratorTests
         });
 
         Assert.That(result.Count, Is.EqualTo(3));
-        _mockChampionshipRepository.Verify(repo => repo.GetAllAsync(), Times.Once);
+        _mockChampionshipRepository.Verify(repo => repo.GetAllAsync(null), Times.Once);
     }
 
     [Test]
@@ -102,7 +102,7 @@ public class ChampionshipOrchestratorTests
             TeamCPoints = 6
         };
 
-        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync(null))
             .ReturnsAsync(_testChampionships);
         _mockChampionshipRepository.Setup(repo => repo.CreateAsync(It.IsAny<ChampionshipDto>()))
             .ReturnsAsync((ChampionshipDto c) => c);
@@ -123,7 +123,7 @@ public class ChampionshipOrchestratorTests
             TeamCPoints = 6
         };
 
-        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync(null))
             .ReturnsAsync(_testChampionships);
 
         Assert.ThrowsAsync<ChampionshipAlreadyExistsException>(async () => 
@@ -146,7 +146,7 @@ public class ChampionshipOrchestratorTests
 
         _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
             .ReturnsAsync(existingChampionship);
-        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync(null))
             .ReturnsAsync(_testChampionships);
         _mockChampionshipRepository.Setup(repo => repo.UpdateAsync(existingChampionship.Id, It.IsAny<ChampionshipDto>()))
             .ReturnsAsync(updatedData);
@@ -199,7 +199,7 @@ public class ChampionshipOrchestratorTests
 
         _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
             .ReturnsAsync(existingChampionship);
-        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync(null))
             .ReturnsAsync(_testChampionships);
         _mockChampionshipRepository.Setup(repo => repo.UpdateAsync(existingChampionship.Id, It.IsAny<ChampionshipDto>()))
             .ReturnsAsync(updatedData);
@@ -232,7 +232,7 @@ public class ChampionshipOrchestratorTests
 
         _mockChampionshipRepository.Setup(repo => repo.GetByIdAsync(existingChampionship.Id))
             .ReturnsAsync(existingChampionship);
-        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync())
+        _mockChampionshipRepository.Setup(repo => repo.GetAllAsync(null))
             .ReturnsAsync(_testChampionships);
         _mockChampionshipRepository.Setup(repo => repo.UpdateAsync(existingChampionship.Id, It.IsAny<ChampionshipDto>()))
             .ReturnsAsync(updatedData);

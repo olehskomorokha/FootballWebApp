@@ -23,9 +23,12 @@ public class ChampionshipRepository : IChampionshipRepository
         return _mapper.Map<ChampionshipDto>(createdEntity.Entity);
     }
     
-    public async Task<List<ChampionshipDto>> GetAllAsync()
+    public async Task<List<ChampionshipDto>> GetAllAsync(PaginationDto pagination)
     {
-        var championships = await _cosmosDbcontext.Championships.ToListAsync();
+        var championships = await _cosmosDbcontext.Championships
+            .Where(x => !x.Deleted)
+            .Skip((pagination.page - 1) * pagination.pageSize)
+            .Take(pagination.pageSize).ToListAsync();
         return _mapper.Map<List<ChampionshipDto>>(championships);
     }
     
@@ -37,13 +40,7 @@ public class ChampionshipRepository : IChampionshipRepository
     
     public async Task<ChampionshipDto> UpdateAsync(Guid id, ChampionshipDto updatedChampionship)
     {
-        var championship = await _cosmosDbcontext.Championships.FirstOrDefaultAsync(c => c.Id == id);
-        if (championship == null)
-        {
-            throw new ChampionshipNotFoundException();
-        }
-
-        _mapper.Map(updatedChampionship, championship);
+        var championship = _mapper.Map<ChampionshipDao>(updatedChampionship);
         _cosmosDbcontext.Championships.Update(championship);
         await _cosmosDbcontext.SaveChangesAsync();
         
@@ -52,9 +49,9 @@ public class ChampionshipRepository : IChampionshipRepository
     
     public async Task<Guid> DeleteAsync(Guid id)
     {
-        var championship = await _cosmosDbcontext.Championships.FirstAsync(c => c.Id == id);
-        championship.Deleted = true;
-        _cosmosDbcontext.Championships.Update(championship);
+        var championship = new ChampionshipDao { Id = id, Deleted = true };
+        _cosmosDbcontext.Championships.Attach(championship);
+        _cosmosDbcontext.Entry(championship).Property(c => c.Deleted).IsModified = true;
         await _cosmosDbcontext.SaveChangesAsync();
         return id;
     }

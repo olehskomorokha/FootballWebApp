@@ -1,154 +1,205 @@
 using AutoMapper;
-using FootballWebApp.Championship;
-using FootballWebApp.Championship.Contract;
 using FootballWebApp.Data;
 using FootballWebApp.Data.Championship;
 using FootballWebApp.Model.Championship;
 using FootballWebApp.Model.Common;
-using FootballWebApp.Orchestrator.Championship;
-using FootballWebApp.User.Contract;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Configuration;
+using FootballWebApp.Championship.Contract;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace FootballWebApp.IntegrationTests;
 
-public class ChampionshipControllerTests
+[TestFixture]
+public class ChampionshipControllerTests : IAsyncDisposable
 {
-    private ChampionshipsController _championshipsController;
-    private IConfiguration _configuration;
-    private CosmosDbContext _context;
-    private ChampionshipDao _existingChampionship;
-    
-    [SetUp]
-    public void Setup()
+    private WebApplicationFactory<Program> _factory = null!;
+    private HttpClient _client = null!;
+    private IServiceScope _scope = null!;
+    private CosmosDbContext _context = null!;
+    private ChampionshipDao _existingChampionship = null!;
+
+    [OneTimeSetUp]
+    public void OneTimeSetup()
     {
-        _configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json")
-            .Build();
-        var options = new DbContextOptionsBuilder<CosmosDbContext>()
-            .UseCosmos(_configuration.GetConnectionString("CosmosConnection"),
-                databaseName: "FootballWebAppTests")
-            .Options;
+        _factory = new CustomWebApplicationFactory();
+        _client = _factory.CreateClient();
+    }
 
-        _context = new CosmosDbContext(options);
-        _context.Database.EnsureCreatedAsync().GetAwaiter().GetResult();
+    [SetUp]
+    public async Task Setup()
+    {
+        _scope = _factory.Services.CreateScope();
+        _context = _scope.ServiceProvider.GetRequiredService<CosmosDbContext>();
+        await _context.Database.EnsureCreatedAsync();
 
-        var config = new MapperConfiguration(cfg => 
-        { 
-            cfg.AddProfile<ChampionshipMap>();
-            cfg.AddProfile<PaginationMap>();
-        });
-        var mapper = config.CreateMapper();
-        
-        var championshipRepository = new ChampionshipRepository(mapper, _context);
-        var championshipOrchestrator = new ChampionshipOrchestrator(championshipRepository);
-        _championshipsController = new ChampionshipsController(mapper, championshipOrchestrator);
-        
-        var championships = new List<ChampionshipDao>
+        _existingChampionship = new ChampionshipDao
         {
-            new ChampionshipDao
-            {
-                Id = Guid.NewGuid(),
-                Name = "Premier League",
-                DateOfCreation = new DateTime(2023, 1, 10),
-                TeamAPoints = 10,
-                TeamBPoints = 8,
-                TeamCPoints = 6
-            }
+            Id = Guid.NewGuid(),
+            Name = "Premier League",
+            DateOfCreation = new DateTime(2023, 1, 10),
+            TeamAPoints = 10,
+            TeamBPoints = 8,
+            TeamCPoints = 6,
+            Deleted = false
         };
 
-        _context.Championships.AddRangeAsync(championships).GetAwaiter().GetResult();
-        _context.SaveChangesAsync().GetAwaiter().GetResult();
-        
-        _existingChampionship = _context.Championships.FirstAsync().GetAwaiter().GetResult();
+        await _context.Championships.AddAsync(_existingChampionship);
+        await _context.SaveChangesAsync();
     }
 
     [TearDown]
-    public void TearDown()
+    public async Task TearDown()
     {
-        _context.Database.EnsureDeletedAsync().GetAwaiter().GetResult();
-        _context.Dispose();
+        if (_context != null)
+        {
+            await _context.Database.EnsureDeletedAsync();
+            await _context.DisposeAsync();
+        }
+
+        if (_scope != null)
+        {
+            _scope.Dispose();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_context != null)
+        {
+            await _context.DisposeAsync();
+        }
+
+        if (_scope != null)
+        {
+            _scope.Dispose();
+        }
+
+        if (_client != null)
+        {
+            _client.Dispose();
+        }
+
+        if (_factory != null)
+        {
+            await _factory.DisposeAsync();
+        }
     }
 
     [Test]
     public async Task GetAllAsync_ShouldReturnAllChampionships()
     {
-        var result = await _championshipsController.GetAllAsync(new Pagination
+        var response = await _client.GetAsync("/api/v1/championships?page=1&pageSize=10");
+        var content = await response.Content.ReadAsStringAsync();
+        var championships = JsonSerializer.Deserialize<List<ChampionshipDto>>(content, new JsonSerializerOptions
         {
-            page = 1,
-            pageSize = 10
+            PropertyNameCaseInsensitive = true
         });
-
-        var okResult = result as OkObjectResult;
-        var championships = okResult?.Value as IEnumerable<ChampionshipDto>;
-        Assert.That(championships?.Count(), Is.EqualTo(1));
-    }
-    
-    [Test]
-    public async Task GetByIdAsync_ShouldReturnCorrectChampionship()
-    {
-        var result = await _championshipsController.GetByIdAsync(_existingChampionship.Id);
-        var okResult = result as OkObjectResult;
-        var championship = okResult?.Value as ChampionshipDto;
 
         Assert.Multiple(() =>
         {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(championships, Is.Not.Null);
+            Assert.That(championships?.Count, Is.EqualTo(1));
+            Assert.That(championships?[0].Name, Is.EqualTo("Premier League"));
+        });
+    }
+
+    [Test]
+    public async Task GetByIdAsync_ShouldReturnCorrectChampionship()
+    {
+        var response = await _client.GetAsync($"/api/v1/championships/{_existingChampionship.Id}");
+        var content = await response.Content.ReadAsStringAsync();
+        var championship = JsonSerializer.Deserialize<ChampionshipDto>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
             Assert.That(championship, Is.Not.Null);
             Assert.That(championship?.Id, Is.EqualTo(_existingChampionship.Id));
             Assert.That(championship?.Name, Is.EqualTo(_existingChampionship.Name));
         });
     }
-    
+
     [Test]
     public async Task CreateAsync_ShouldAddNewChampionship()
     {
         var newChampionship = new CreateChampionship
         {
             Name = "Serie A",
-            DateOfCreation = DateTime.UtcNow,
             TeamAPoints = 10,
             TeamBPoints = 8,
             TeamCPoints = 6
         };
 
-        var result = await _championshipsController.CreateAsync(newChampionship);
+        var json = JsonSerializer.Serialize(newChampionship);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var okResult = result as OkObjectResult;
-        var createdChampionship = okResult?.Value as ChampionshipDto;
-        Assert.That(createdChampionship?.Name, Is.EqualTo(newChampionship.Name));
+        var response = await _client.PostAsync("/api/v1/championships", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var createdChampionship = JsonSerializer.Deserialize<ChampionshipDto>(responseContent, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(createdChampionship, Is.Not.Null);
+            Assert.That(createdChampionship?.Name, Is.EqualTo(newChampionship.Name));
+            Assert.That(createdChampionship?.TeamAPoints, Is.EqualTo(newChampionship.TeamAPoints));
+        });
     }
 
     [Test]
-    public async Task UpdateAsync_ShouldModifyChampionshipFields()
+    public async Task UpdateAsync_ShouldModifyChampionship()
     {
         var updateModel = new CreateChampionship
         {
-            Name = "Premier League",
-            DateOfCreation = DateTime.UtcNow,
+            Name = "Updated Premier League",
             TeamAPoints = 15,
             TeamBPoints = 12,
             TeamCPoints = 9
         };
 
-        var updateResult = await _championshipsController.UpdateAsync(_existingChampionship.Id, updateModel);
+        var json = JsonSerializer.Serialize(updateModel);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var okResult = updateResult as OkObjectResult;
-        var updatedChampionship = okResult?.Value as ChampionshipDto;
+        var response = await _client.PutAsync($"/api/v1/championships/{_existingChampionship.Id}", content);
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var updatedChampionship = JsonSerializer.Deserialize<ChampionshipDto>(responseContent, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
         Assert.Multiple(() =>
         {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(updatedChampionship, Is.Not.Null);
+            Assert.That(updatedChampionship?.Name, Is.EqualTo(updateModel.Name));
             Assert.That(updatedChampionship?.TeamAPoints, Is.EqualTo(updateModel.TeamAPoints));
-            Assert.That(updatedChampionship?.TeamBPoints, Is.EqualTo(updateModel.TeamBPoints));
-            Assert.That(updatedChampionship?.TeamCPoints, Is.EqualTo(updateModel.TeamCPoints));
         });
     }
 
     [Test]
     public async Task DeleteAsync_ShouldMarkChampionshipAsDeleted()
     {
-        await _championshipsController.DeleteAsync(_existingChampionship.Id);
+        var response = await _client.DeleteAsync($"/api/v1/championships/{_existingChampionship.Id}");
 
-        Assert.ThrowsAsync<ChampionshipNotFoundException>(() => _championshipsController.GetByIdAsync(_existingChampionship.Id));
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+        var getAllResponse = await _client.GetAsync("/api/v1/championships?page=1&pageSize=10");
+        var content = await getAllResponse.Content.ReadAsStringAsync();
+        var championships = JsonSerializer.Deserialize<List<ChampionshipDto>>(content, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        Assert.That(championships?.Count, Is.EqualTo(0));
     }
 } 

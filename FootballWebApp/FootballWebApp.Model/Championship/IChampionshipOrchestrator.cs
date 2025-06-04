@@ -8,5 +8,5 @@ public interface IChampionshipOrchestrator
     Task<List<ChampionshipDto>> GetAllAsync(PaginationDto pagination);
     Task<ChampionshipDto> GetByIdAsync(Guid id);
     Task<ChampionshipDto> UpdateAsync(Guid id, ChampionshipDto championshipDto);
-    Task<Guid> DeleteAsync(Guid id);
+    Task<Guid> SoftDeleteAsync(Guid id);
 }

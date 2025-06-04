@@ -49,9 +49,7 @@ public class ChampionshipRepository : IChampionshipRepository
     
     public async Task<Guid> DeleteAsync(Guid id)
     {
-        var championship = new ChampionshipDao { Id = id, Deleted = true };
-        _cosmosDbcontext.Championships.Attach(championship);
-        _cosmosDbcontext.Entry(championship).Property(c => c.Deleted).IsModified = true;
+        _cosmosDbcontext.Remove(id);
         await _cosmosDbcontext.SaveChangesAsync();
         return id;
     }

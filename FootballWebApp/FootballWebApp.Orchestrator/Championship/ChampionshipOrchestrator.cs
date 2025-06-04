@@ -45,9 +45,11 @@ public class ChampionshipOrchestrator : IChampionshipOrchestrator
         return updated;
     }
     
-    public async Task<Guid> DeleteAsync(Guid id)
+    public async Task<Guid> SoftDeleteAsync(Guid id)
     {
-        await GetByIdAsync(id);
-        return await _repository.DeleteAsync(id);
+        var championship = await GetByIdAsync(id);
+        championship.Deleted = true;
+        await _repository.UpdateAsync(id, championship);
+        return id;
     }
 }

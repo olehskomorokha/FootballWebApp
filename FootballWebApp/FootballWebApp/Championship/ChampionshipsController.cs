@@ -55,7 +55,7 @@ public class ChampionshipsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAsync(Guid id)
     {
-        var deletedId = await _championshipOrchestrator.DeleteAsync(id);
+        var deletedId = await _championshipOrchestrator.SoftDeleteAsync(id);
         return Ok(deletedId);
     }
 }

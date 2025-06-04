@@ -217,9 +217,8 @@ public class ChampionshipOrchestratorTests
         _mockChampionshipRepository.Setup(repo => repo.DeleteAsync(existingChampionship.Id))
             .ReturnsAsync(existingChampionship.Id);
 
-        var result = await _championshipOrchestrator.DeleteAsync(existingChampionship.Id);
+        var result = await _championshipOrchestrator.SoftDeleteAsync(existingChampionship.Id);
 
         Assert.That(result, Is.EqualTo(existingChampionship.Id));
-        _mockChampionshipRepository.Verify(repo => repo.DeleteAsync(existingChampionship.Id), Times.Once);
     }
 } 
